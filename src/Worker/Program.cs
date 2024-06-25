@@ -4,6 +4,12 @@ using MassTransit;
 using worker;
 using VotingData.Db;
 using worker.Consumers;
+using OpenTelemetry;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Metrics;
+
+var defaultResource = ResourceBuilder.CreateDefault();
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -12,7 +18,11 @@ builder.ConfigureLogging((hostBuilderContext,logging) =>
     logging.ClearProviders();
     logging.AddConsole();
     //Add code to configurate ILogger for OpenTelemtry here
-
+    logging.AddOpenTelemetry((options) =>
+    {
+        options.SetResourceBuilder(defaultResource);       
+        options.AddOtlpExporter();
+    });
 });
 builder.ConfigureServices((hostBuilderContext, services) =>
 {    

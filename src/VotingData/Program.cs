@@ -20,8 +20,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
 
-//Add code block to register OpenTelemetry MetricProvider here
-
+var defaultResource = ResourceBuilder.CreateDefault();
+builder.Logging.AddOpenTelemetry(options =>
+{
+  options.IncludeFormattedMessage = true;
+  options.ParseStateValues = true;
+  options.IncludeScopes = true;
+  options.SetResourceBuilder(defaultResource);
+  options.AddOtlpExporter();        
+});
 //Add code block to register OpenTelemetry TraceProvider here
 
 builder.Services.AddCors(options =>

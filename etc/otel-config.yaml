@@ -1,9 +1,20 @@
 receivers:
+  otlp:
+    protocols:
+      grpc:  
 
 processors:
   batch:  
 
 exporters:
-  
+  awscloudwatchlogs:
+    region: ap-southeast-1
+    log_group_name: "sd2411/o11y-lab/logs"
+    log_stream_name: "sd2411/o11y-lab/stream"
+    log_retention: 7
 service:
   pipelines:
+    logs:
+       receivers: [otlp]
+       processors: [batch]
+       exporters: [awscloudwatchlogs] 
