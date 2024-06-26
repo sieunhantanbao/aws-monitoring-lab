@@ -23,8 +23,8 @@ builder.ConfigureLogging((hostBuilderContext,logging) =>
         options.SetResourceBuilder(defaultResource);       
         options.AddOtlpExporter(otlOption =>
         {
-            otlOption.Endpoint = new Uri("http://otel-collector:4317");
-            otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+            otlOption.Endpoint = new Uri("http://localhost:4318");
+            otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
         });
     });
 });
@@ -40,8 +40,8 @@ builder.ConfigureServices((hostBuilderContext, services) =>
             .AddConsoleExporter()
             .AddOtlpExporter(otlOption =>
             {
-                otlOption.Endpoint = new Uri("http://otel-collector:4317");
-                otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                otlOption.Endpoint = new Uri("http://localhost:4318");
+                otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
             }));
     var connectionString = hostBuilderContext.Configuration.GetConnectionString("SqlDbConnection");
     services.AddDbContext<VotingDBContext>(options =>options.UseNpgsql(connectionString));
