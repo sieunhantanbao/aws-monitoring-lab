@@ -18,27 +18,39 @@ using MassTransit;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using System.Reflection;
+using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
 
-var defaultResource = ResourceBuilder.CreateDefault();
+var defaultResource = ResourceBuilder.CreateDefault().AddService("VotingApi");
+
 builder.Logging.AddOpenTelemetry(options =>
 {
   options.IncludeFormattedMessage = true;
   options.ParseStateValues = true;
   options.IncludeScopes = true;
   options.SetResourceBuilder(defaultResource);
-  options.AddOtlpExporter();        
+  options.AddOtlpExporter(otlOption =>
+  {
+      otlOption.Endpoint = new Uri("http://otel-collector:4317");
+      otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+  });        
 });
+
 builder.Services.AddOpenTelemetry()
     .WithMetrics((providerBuilder) => providerBuilder
       .AddMeter("VotingMeter")
       .SetResourceBuilder(defaultResource)
       .AddAspNetCoreInstrumentation()
       .AddConsoleExporter()
-      .AddOtlpExporter()
+      .AddOtlpExporter(otlOption =>
+      {
+          otlOption.Endpoint = new Uri("http://otel-collector:4317");
+          otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+      })
     );
 //Add code block to register OpenTelemetry TraceProvider here
 

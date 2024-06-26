@@ -8,8 +8,9 @@ using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Metrics;
+using RabbitMQ.Client;
 
-var defaultResource = ResourceBuilder.CreateDefault();
+var defaultResource = ResourceBuilder.CreateDefault().AddService("WorkerService");
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -17,13 +18,17 @@ builder.ConfigureLogging((hostBuilderContext,logging) =>
 {
     logging.ClearProviders();
     logging.AddConsole();
-    //Add code to configurate ILogger for OpenTelemtry here
     logging.AddOpenTelemetry((options) =>
     {
         options.SetResourceBuilder(defaultResource);       
-        options.AddOtlpExporter();
+        options.AddOtlpExporter(otlOption =>
+        {
+            otlOption.Endpoint = new Uri("http://otel-collector:4317");
+            otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+        });
     });
 });
+
 builder.ConfigureServices((hostBuilderContext, services) =>
 {
     //add code block to register opentelemetry for metrics and traces
@@ -33,7 +38,11 @@ builder.ConfigureServices((hostBuilderContext, services) =>
             .SetResourceBuilder(defaultResource)
             .AddAspNetCoreInstrumentation()
             .AddConsoleExporter()
-            .AddOtlpExporter());
+            .AddOtlpExporter(otlOption =>
+            {
+                otlOption.Endpoint = new Uri("http://otel-collector:4317");
+                otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+            }));
     var connectionString = hostBuilderContext.Configuration.GetConnectionString("SqlDbConnection");
     services.AddDbContext<VotingDBContext>(options =>options.UseNpgsql(connectionString));
 
