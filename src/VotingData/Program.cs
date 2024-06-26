@@ -17,6 +17,7 @@ using VotingData.Models;
 using MassTransit;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,14 @@ builder.Logging.AddOpenTelemetry(options =>
   options.SetResourceBuilder(defaultResource);
   options.AddOtlpExporter();        
 });
+builder.Services.AddOpenTelemetry()
+    .WithMetrics((providerBuilder) => providerBuilder
+      .AddMeter("VotingMeter")
+      .SetResourceBuilder(defaultResource)
+      .AddAspNetCoreInstrumentation()
+      .AddConsoleExporter()
+      .AddOtlpExporter()
+    );
 //Add code block to register OpenTelemetry TraceProvider here
 
 builder.Services.AddCors(options =>

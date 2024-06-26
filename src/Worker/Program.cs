@@ -25,9 +25,15 @@ builder.ConfigureLogging((hostBuilderContext,logging) =>
     });
 });
 builder.ConfigureServices((hostBuilderContext, services) =>
-{    
+{
     //add code block to register opentelemetry for metrics and traces
-    
+    services.AddOpenTelemetry()
+            .WithMetrics((providerBuilder) => providerBuilder
+            .AddMeter("VotingMeter")
+            .SetResourceBuilder(defaultResource)
+            .AddAspNetCoreInstrumentation()
+            .AddConsoleExporter()
+            .AddOtlpExporter());
     var connectionString = hostBuilderContext.Configuration.GetConnectionString("SqlDbConnection");
     services.AddDbContext<VotingDBContext>(options =>options.UseNpgsql(connectionString));
 
