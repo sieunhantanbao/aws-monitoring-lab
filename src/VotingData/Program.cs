@@ -66,7 +66,7 @@ builder.Services.AddOpenTelemetry()
             .AddSource("Npgsql")
             .AddSource("MassTransit")
             .AddXRayTraceId()
-            .AddAWSInstrumentation()      
+            .AddAWSInstrumentation()
             .AddAspNetCoreInstrumentation(options =>
             {
                 options.RecordException = true;
