@@ -44,7 +44,8 @@ builder.ConfigureServices((hostBuilderContext, services) =>
                 metrics
                   .AddMeter(meter.Name)
                   .SetResourceBuilder(defaultResource)
-                  .AddAspNetCoreInstrumentation();
+                  .AddAspNetCoreInstrumentation()
+                  .AddHttpClientInstrumentation();
 
                 metrics
                   .AddConsoleExporter()
@@ -63,6 +64,7 @@ builder.ConfigureServices((hostBuilderContext, services) =>
                 .AddSource("MassTransit")
                 .AddXRayTraceId()
                 .AddAWSInstrumentation()
+                .AddHttpClientInstrumentation()
                 .AddAspNetCoreInstrumentation(options =>
                 {
                     options.RecordException = true;

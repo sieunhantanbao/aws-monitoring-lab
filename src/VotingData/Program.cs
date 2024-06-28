@@ -28,6 +28,8 @@ using OpenTelemetry.Trace;
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 var defaultResource = ResourceBuilder.CreateDefault().AddService("VotingApi");
+
+
 builder.Logging.AddOpenTelemetry(options =>
 {
       options.IncludeFormattedMessage = true;
@@ -48,7 +50,8 @@ builder.Services.AddOpenTelemetry()
           metrics
             .AddMeter(meter.Name)
             .SetResourceBuilder(defaultResource)
-            .AddAspNetCoreInstrumentation();
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation();
 
           metrics
             .AddConsoleExporter()
@@ -67,6 +70,7 @@ builder.Services.AddOpenTelemetry()
             .AddSource("MassTransit")
             .AddXRayTraceId()
             .AddAWSInstrumentation()
+            .AddHttpClientInstrumentation()
             .AddAspNetCoreInstrumentation(options =>
             {
                 options.RecordException = true;
