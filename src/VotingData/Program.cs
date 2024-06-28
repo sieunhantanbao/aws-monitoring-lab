@@ -20,39 +20,71 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using System.Reflection;
 using RabbitMQ.Client;
+using System.Diagnostics.Metrics;
+using OpenTelemetry;
+using OpenTelemetry.Contrib.Extensions.AWSXRay.Trace;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Logging.ClearProviders();
-
 var defaultResource = ResourceBuilder.CreateDefault().AddService("VotingApi");
-
 builder.Logging.AddOpenTelemetry(options =>
 {
-  options.IncludeFormattedMessage = true;
-  options.ParseStateValues = true;
-  options.IncludeScopes = true;
-  options.SetResourceBuilder(defaultResource);
-  options.AddOtlpExporter(otlOption =>
-  {
-      otlOption.Endpoint = new Uri("http://localhost:4318");
-      otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-  });        
+      options.IncludeFormattedMessage = true;
+      options.ParseStateValues = true;
+      options.IncludeScopes = true;
+      options.SetResourceBuilder(defaultResource);
+      options.AddOtlpExporter(opts =>
+      {
+            opts.Endpoint = new Uri("http://localhost:4317");
+            opts.ExportProcessorType = ExportProcessorType.Batch;
+            opts.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+      });    
 });
 
 builder.Services.AddOpenTelemetry()
-    .WithMetrics((providerBuilder) => providerBuilder
-      .AddMeter("VotingMeter")
-      .SetResourceBuilder(defaultResource)
-      .AddAspNetCoreInstrumentation()
-      .AddConsoleExporter()
-      .AddOtlpExporter(otlOption =>
-      {
-          otlOption.Endpoint = new Uri("http://localhost:4318");
-          otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+      .WithMetrics(metrics => {
+          var meter = new Meter("VotingMeter");
+          metrics
+            .AddMeter(meter.Name)
+            .SetResourceBuilder(defaultResource)
+            .AddAspNetCoreInstrumentation();
+
+          metrics
+            .AddConsoleExporter()
+            .AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri("http://localhost:4317");
+                options.ExportProcessorType = ExportProcessorType.Batch;
+                options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+            });
       })
-    );
-//Add code block to register OpenTelemetry TraceProvider here
+      .WithTracing(traces =>
+      {
+          traces
+            .SetResourceBuilder(defaultResource)
+            .AddSource("Npgsql")
+            .AddSource("MassTransit")
+            .AddXRayTraceId()
+            .AddAWSInstrumentation()      
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.RecordException = true;
+            })
+            .AddSqlClientInstrumentation(options => options.SetDbStatementForText = true)
+            .AddMassTransitInstrumentation();
+
+          traces
+           .AddConsoleExporter()
+           .AddOtlpExporter(options =>
+           {
+               options.Endpoint = new Uri("http://localhost:4317");
+               options.ExportProcessorType = ExportProcessorType.Batch;
+               options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+           });
+      });
+
+ Sdk.SetDefaultTextMapPropagator(new AWSXRayPropagator());
 
 builder.Services.AddCors(options =>
             {

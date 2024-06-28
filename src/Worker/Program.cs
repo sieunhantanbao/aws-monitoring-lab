@@ -9,6 +9,9 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Metrics;
 using RabbitMQ.Client;
+using OpenTelemetry.Trace;
+using System.Diagnostics.Metrics;
+using OpenTelemetry.Contrib.Extensions.AWSXRay.Trace;
 
 var defaultResource = ResourceBuilder.CreateDefault().AddService("WorkerService");
 
@@ -20,29 +23,65 @@ builder.ConfigureLogging((hostBuilderContext,logging) =>
     logging.AddConsole();
     logging.AddOpenTelemetry((options) =>
     {
+        options.IncludeFormattedMessage = true;
+        options.ParseStateValues = true;
+        options.IncludeScopes = true;
         options.SetResourceBuilder(defaultResource);       
-        options.AddOtlpExporter(otlOption =>
+        options.AddOtlpExporter(opt =>
         {
-            otlOption.Endpoint = new Uri("http://localhost:4318");
-            otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+            opt.Endpoint = new Uri("http://localhost:4317");
+            opt.ExportProcessorType = ExportProcessorType.Batch;
+            opt.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
         });
     });
 });
 
 builder.ConfigureServices((hostBuilderContext, services) =>
 {
-    //add code block to register opentelemetry for metrics and traces
     services.AddOpenTelemetry()
-            .WithMetrics((providerBuilder) => providerBuilder
-            .AddMeter("VotingMeter")
-            .SetResourceBuilder(defaultResource)
-            .AddAspNetCoreInstrumentation()
-            .AddConsoleExporter()
-            .AddOtlpExporter(otlOption =>
-            {
-                otlOption.Endpoint = new Uri("http://localhost:4318");
-                otlOption.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-            }));
+            .WithMetrics(metrics => {
+                var meter = new Meter("VotingMeter");
+                metrics
+                  .AddMeter(meter.Name)
+                  .SetResourceBuilder(defaultResource)
+                  .AddAspNetCoreInstrumentation();
+
+                metrics
+                  .AddConsoleExporter()
+                  .AddOtlpExporter(options =>
+                  {
+                      options.Endpoint = new Uri("http://localhost:4317");
+                      options.ExportProcessorType = ExportProcessorType.Batch;
+                      options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                  });
+            })
+           .WithTracing(traces =>
+           {
+              traces
+                .SetResourceBuilder(defaultResource)
+                .AddSource("Npgsql")
+                .AddSource("MassTransit")
+                .AddXRayTraceId()
+                .AddAWSInstrumentation()
+                .AddAspNetCoreInstrumentation(options =>
+                {
+                    options.RecordException = true;
+                })
+                .AddSqlClientInstrumentation(options => options.SetDbStatementForText = true)
+                .AddMassTransitInstrumentation();
+
+              traces
+               .AddConsoleExporter()
+               .AddOtlpExporter(options =>
+               {
+                   options.Endpoint = new Uri("http://localhost:4317");
+                   options.ExportProcessorType = ExportProcessorType.Batch;
+                   options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+               });
+           });
+
+    Sdk.SetDefaultTextMapPropagator(new AWSXRayPropagator());
+
     var connectionString = hostBuilderContext.Configuration.GetConnectionString("SqlDbConnection");
     services.AddDbContext<VotingDBContext>(options =>options.UseNpgsql(connectionString));
 
