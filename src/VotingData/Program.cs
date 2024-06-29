@@ -3,32 +3,29 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using MassTransit;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using VotingData.Models;
-using MassTransit;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
-using System.Reflection;
-using RabbitMQ.Client;
-using System.Diagnostics.Metrics;
 using OpenTelemetry;
 using OpenTelemetry.Contrib.Extensions.AWSXRay.Trace;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using System;
+using System.Diagnostics.Metrics;
+using VotingData.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
-var defaultResource = ResourceBuilder.CreateDefault().AddService("VotingApi");
-
+var defaultResource = ResourceBuilder.CreateDefault();
 
 builder.Logging.AddOpenTelemetry(options =>
 {
@@ -38,7 +35,7 @@ builder.Logging.AddOpenTelemetry(options =>
       options.SetResourceBuilder(defaultResource);
       options.AddOtlpExporter(opts =>
       {
-            opts.Endpoint = new Uri("http://localhost:4317");
+            opts.Endpoint = new Uri("http://otel-collector:4317");
             opts.ExportProcessorType = ExportProcessorType.Batch;
             opts.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
       });    
@@ -57,7 +54,7 @@ builder.Services.AddOpenTelemetry()
             .AddConsoleExporter()
             .AddOtlpExporter(options =>
             {
-                options.Endpoint = new Uri("http://localhost:4317");
+                options.Endpoint = new Uri("http://otel-collector:4317");
                 options.ExportProcessorType = ExportProcessorType.Batch;
                 options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
             });
@@ -82,7 +79,7 @@ builder.Services.AddOpenTelemetry()
            .AddConsoleExporter()
            .AddOtlpExporter(options =>
            {
-               options.Endpoint = new Uri("http://localhost:4317");
+               options.Endpoint = new Uri("http://otel-collector:4317");
                options.ExportProcessorType = ExportProcessorType.Batch;
                options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
            });
@@ -100,7 +97,7 @@ builder.Services.AddCors(options =>
             });
 
 builder.Services.AddControllers();
-
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "votingdata", Version = "v1" });
