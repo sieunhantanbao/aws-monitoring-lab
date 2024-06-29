@@ -13,7 +13,7 @@ using OpenTelemetry.Trace;
 using System.Diagnostics.Metrics;
 using OpenTelemetry.Contrib.Extensions.AWSXRay.Trace;
 
-var defaultResource = ResourceBuilder.CreateDefault().AddService("WorkerService");
+var defaultResource = ResourceBuilder.CreateDefault();
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -27,12 +27,7 @@ builder.ConfigureLogging((hostBuilderContext,logging) =>
         options.ParseStateValues = true;
         options.IncludeScopes = true;
         options.SetResourceBuilder(defaultResource);       
-        options.AddOtlpExporter(opt =>
-        {
-            opt.Endpoint = new Uri("http://otel-collector:4317");
-            opt.ExportProcessorType = ExportProcessorType.Batch;
-            opt.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-        });
+        options.AddOtlpExporter();
     });
 });
 
@@ -49,12 +44,7 @@ builder.ConfigureServices((hostBuilderContext, services) =>
 
                 metrics
                   .AddConsoleExporter()
-                  .AddOtlpExporter(options =>
-                  {
-                      options.Endpoint = new Uri("http://otel-collector:4317");
-                      options.ExportProcessorType = ExportProcessorType.Batch;
-                      options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-                  });
+                  .AddOtlpExporter();
             })
            .WithTracing(traces =>
            {
@@ -74,12 +64,7 @@ builder.ConfigureServices((hostBuilderContext, services) =>
 
               traces
                .AddConsoleExporter()
-               .AddOtlpExporter(options =>
-               {
-                   options.Endpoint = new Uri("http://otel-collector:4317");
-                   options.ExportProcessorType = ExportProcessorType.Batch;
-                   options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-               });
+               .AddOtlpExporter();
            });
 
     Sdk.SetDefaultTextMapPropagator(new AWSXRayPropagator());

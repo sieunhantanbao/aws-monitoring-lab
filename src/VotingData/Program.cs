@@ -19,7 +19,6 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using System;
 using System.Diagnostics.Metrics;
 using VotingData.Models;
 
@@ -33,12 +32,7 @@ builder.Logging.AddOpenTelemetry(options =>
       options.ParseStateValues = true;
       options.IncludeScopes = true;
       options.SetResourceBuilder(defaultResource);
-      options.AddOtlpExporter(opts =>
-      {
-            opts.Endpoint = new Uri("http://otel-collector:4317");
-            opts.ExportProcessorType = ExportProcessorType.Batch;
-            opts.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-      });    
+      options.AddOtlpExporter();    
 });
 
 builder.Services.AddOpenTelemetry()
@@ -52,12 +46,7 @@ builder.Services.AddOpenTelemetry()
 
           metrics
             .AddConsoleExporter()
-            .AddOtlpExporter(options =>
-            {
-                options.Endpoint = new Uri("http://otel-collector:4317");
-                options.ExportProcessorType = ExportProcessorType.Batch;
-                options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-            });
+            .AddOtlpExporter();
       })
       .WithTracing(traces =>
       {
@@ -77,12 +66,7 @@ builder.Services.AddOpenTelemetry()
 
           traces
            .AddConsoleExporter()
-           .AddOtlpExporter(options =>
-           {
-               options.Endpoint = new Uri("http://otel-collector:4317");
-               options.ExportProcessorType = ExportProcessorType.Batch;
-               options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-           });
+           .AddOtlpExporter();
       });
 
  Sdk.SetDefaultTextMapPropagator(new AWSXRayPropagator());
