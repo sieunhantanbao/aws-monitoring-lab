@@ -29,7 +29,7 @@ builder.ConfigureLogging((hostBuilderContext,logging) =>
         options.SetResourceBuilder(defaultResource);       
         options.AddOtlpExporter(opt =>
         {
-            opt.Endpoint = new Uri("http://localhost:4317");
+            opt.Endpoint = new Uri("http://otel-collector:4317");
             opt.ExportProcessorType = ExportProcessorType.Batch;
             opt.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
         });
@@ -51,7 +51,7 @@ builder.ConfigureServices((hostBuilderContext, services) =>
                   .AddConsoleExporter()
                   .AddOtlpExporter(options =>
                   {
-                      options.Endpoint = new Uri("http://localhost:4317");
+                      options.Endpoint = new Uri("http://otel-collector:4317");
                       options.ExportProcessorType = ExportProcessorType.Batch;
                       options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
                   });
@@ -76,7 +76,7 @@ builder.ConfigureServices((hostBuilderContext, services) =>
                .AddConsoleExporter()
                .AddOtlpExporter(options =>
                {
-                   options.Endpoint = new Uri("http://localhost:4317");
+                   options.Endpoint = new Uri("http://otel-collector:4317");
                    options.ExportProcessorType = ExportProcessorType.Batch;
                    options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
                });
