@@ -11,17 +11,17 @@ processors:
 
 exporters:
   awscloudwatchlogs:
-    region: ap-southeast-1
-    log_group_name: "sd2411/o11y-lab/logs"
-    log_stream_name: "sd2411/o11y-lab/stream"
+    region: ${AWS_REGION}
+    log_group_name: "${MY_SD_NUMBER}/o11y-lab/logs"
+    log_stream_name: "${MY_SD_NUMBER}/o11y-lab/stream"
     log_retention: 7
   awsemf:
-    region: ap-southeast-1
-    log_group_name: sd2411/o11y-lab/metrics
-    namespace: "sd2411-o11y-lab-metrics"
+    region: ${AWS_REGION}
+    log_group_name: ${MY_SD_NUMBER}/o11y-lab/metrics
+    namespace: "${MY_SD_NUMBER}-o11y-lab-metrics"
     log_retention: 7
   awsxray:
-    region: ap-southeast-1
+    region: ${AWS_REGION}
 
 service:
   telemetry:
