@@ -18,6 +18,7 @@ exporters:
   awsemf:
     region: ap-southeast-1
     log_group_name: sd2411/o11y-lab/metrics
+    namespace: "sd2411-o11y-lab-metrics"
     log_retention: 7
   awsxray:
     region: ap-southeast-1
